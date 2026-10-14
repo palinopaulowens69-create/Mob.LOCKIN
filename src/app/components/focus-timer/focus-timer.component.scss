@@ -4,6 +4,8 @@
   border: 1px solid var(--line);
   border-radius: 20px;
 }
+
+
 h2 {
   font-size: 20px;
 }
@@ -58,4 +60,12 @@ h2 {
   .clock {
     font-size: 46px;
   }
+}
+.subject-options {
+  flex-wrap: wrap;
+}
+
+.subject-label {
+  margin: 0 0 -6px;
+  font-size: 12px;
 }

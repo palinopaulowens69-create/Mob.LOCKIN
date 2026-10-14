@@ -1,6 +1,20 @@
 import { Injectable, inject, signal } from "@angular/core";
 import { MockDataService } from "./mock-data.service";
 import { readLocal, writeLocal, validEmail } from "./local-store";
+
+// "mark.john92@x.com" -> "Mark John". Used only as a starter name when the
+// profile has none yet; the user can change it on the Profile page.
+function nameFromEmail(email: string): string {
+  const local = email.split("@")[0];
+  const words = local
+    .replace(/[0-9]+/g, " ")
+    .split(/[._\-+\s]+/)
+    .filter(Boolean);
+  return (words.length ? words : [local])
+    .map((w) => w[0].toUpperCase() + w.slice(1).toLowerCase())
+    .join(" ");
+}
+
 @Injectable({ providedIn: "root" })
 export class MockAuthService {
   private data = inject(MockDataService);
@@ -17,6 +31,17 @@ export class MockAuthService {
         success: false,
         message: "Password must be at least 6 characters.",
       };
+
+    // The email used to log in becomes the profile email.
+    const cleanEmail = email.trim();
+    const profile = this.data.profile();
+    this.data.updateProfile({
+      name: profile.name.trim() || nameFromEmail(cleanEmail),
+      email: cleanEmail,
+      studyGoal: profile.studyGoal,
+      school: profile.school,
+    });
+
     this.isAuthenticated.set(true);
     writeLocal("lockin.auth", true);
     return { success: true };

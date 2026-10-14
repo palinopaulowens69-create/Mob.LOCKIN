@@ -1,11 +1,14 @@
 import { Injectable, inject, signal, computed, OnDestroy } from "@angular/core";
 import { MockDataService } from "./mock-data.service";
 import { readLocal, writeLocal } from "./local-store";
+
 interface FocusState {
   duration: number;
   remaining: number;
   end: number | null;
+  subjectId?: string;
 }
+
 @Injectable({ providedIn: "root" })
 export class FocusService implements OnDestroy {
   private data = inject(MockDataService);
@@ -17,7 +20,13 @@ export class FocusService implements OnDestroy {
   readonly remaining = signal(this.state.remaining);
   readonly running = signal(this.state.end !== null);
   readonly duration = signal(this.state.duration);
+  readonly subjectId = signal<string>(this.state.subjectId ?? "");
+  readonly subjects = this.data.subjects;
   readonly message = signal("");
+  // True once a session has started and until it is finished or reset.
+  readonly locked = computed(
+    () => this.running() || this.remaining() !== this.duration(),
+  );
   readonly clock = computed(
     () =>
       String(Math.floor(this.remaining() / 60)).padStart(2, "0") +
@@ -40,9 +49,20 @@ export class FocusService implements OnDestroy {
   }
   choose(minutes: number): void {
     if (this.running() || this.remaining() !== this.duration()) return;
-    this.state = { duration: minutes * 60, remaining: minutes * 60, end: null };
+    this.state = {
+      duration: minutes * 60,
+      remaining: minutes * 60,
+      end: null,
+      subjectId: this.subjectId(),
+    };
     this.duration.set(minutes * 60);
     this.remaining.set(minutes * 60);
+    this.persist();
+  }
+  setSubject(id: string): void {
+    if (this.locked()) return;
+    this.subjectId.set(id);
+    this.state.subjectId = id;
     this.persist();
   }
   toggle(): void {
@@ -65,10 +85,14 @@ export class FocusService implements OnDestroy {
         Math.max(0, Math.ceil((this.state.end - Date.now()) / 1000)),
       );
     const elapsed = this.duration() - this.remaining();
-    this.data.addFocus(elapsed);
+    const subject = this.subjectId();
+    this.data.addFocus(elapsed, subject || undefined);
+    const name = this.data.subjectById(subject)?.name;
     this.message.set(
       elapsed > 0
-        ? "Session saved. A little progress adds up."
+        ? name
+          ? `Session saved to ${name}. A little progress adds up.`
+          : "Session saved. A little progress adds up."
         : "Start the timer to record a session.",
     );
     this.reset();
@@ -78,6 +102,7 @@ export class FocusService implements OnDestroy {
       duration: this.duration(),
       remaining: this.duration(),
       end: null,
+      subjectId: this.subjectId(),
     };
     this.remaining.set(this.duration());
     this.running.set(false);

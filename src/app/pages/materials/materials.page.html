@@ -5,7 +5,11 @@
         defaultHref="/tabs/study"
         text=""
       ></ion-back-button></ion-buttons
-    ><ion-title>Materials</ion-title></ion-toolbar
+    ><ion-title>Materials</ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="openGuide()" aria-label="How to use this page">
+        <ion-icon slot="icon-only" name="help-circle-outline"></ion-icon>
+      </ion-button> </ion-buttons></ion-toolbar
   ></ion-header
 ><ion-content class="ion-padding"
   ><main class="page-shell">
@@ -17,11 +21,16 @@
           Search notes, images, documents, and useful study links.
         </p>
       </div>
-      <button class="primary" type="button" (click)="openAddMaterial()">
+      <button
+        class="primary"
+        type="button"
+        data-guide="mat-add"
+        (click)="openAddMaterial()"
+      >
         + Add material
       </button>
     </header>
-    <label class="search"
+    <label class="search" data-guide="mat-search"
       ><span class="sr-only">Search materials</span
       ><input
         type="search"
@@ -29,7 +38,7 @@
         (ngModelChange)="query.set($event)"
         placeholder="Search your materials"
     /></label>
-    <div class="filter-row">
+    <div class="filter-row" data-guide="mat-filters">
       <button
         type="button"
         [class.active]="activeFilter() === ''"
@@ -48,6 +57,7 @@
       @for(m of filtered();track m.id){
       <article
         class="soft-card material-card"
+        [attr.data-guide]="$first ? 'mat-card' : null"
         [style.--subject-color]="data.subjectById(m.subjectId)?.color"
       >
         <div class="file-icon">
@@ -72,7 +82,10 @@
             >Open reference ↗</a
           >}
         </div>
-        <div class="button-row">
+        <div
+          class="button-row"
+          [attr.data-guide]="$first ? 'mat-edit' : null"
+        >
           <button
             class="text-button"
             type="button"

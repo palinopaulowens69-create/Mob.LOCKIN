@@ -4,10 +4,26 @@
       <a class="wordmark" href="/tabs/home"
         ><img src="assets/icon/icon.png" alt="" />
         <span class="wordmark-text">lock in<span>.</span></span></a
-      ><button class="account-pill" type="button" (click)="goProfile()">
-        <span class="mini-avatar">{{ data.profile().avatarInitials }}</span
-        ><span>{{ data.profile().name }}</span>
-      </button>
+      >
+      <div class="home-top-actions">
+        <button
+          class="help-btn"
+          type="button"
+          (click)="openGuide()"
+          aria-label="How to use this page"
+        >
+          <ion-icon name="help-circle-outline"></ion-icon>
+        </button>
+        <button
+          class="account-pill"
+          type="button"
+          data-guide="profile"
+          (click)="goProfile()"
+        >
+          <span class="mini-avatar">{{ data.profile().avatarInitials }}</span
+          ><span>{{ data.profile().name }}</span>
+        </button>
+      </div>
     </header>
     <section class="welcome">
       <div>
@@ -15,7 +31,11 @@
         <h1>{{ greeting() }}, {{ data.profile().name }}.</h1>
         <p class="muted">{{ motivation() }}</p>
       </div>
-      <div class="progress-orbit" [style.--progress]="data.completionRate()">
+      <div
+        class="progress-orbit"
+        data-guide="progress"
+        [style.--progress]="data.completionRate()"
+      >
         <div>
           <strong
             >{{ data.todaysCompleted() }}/{{ data.todaysTasks().length
@@ -32,7 +52,12 @@
             <p class="eyebrow">{{ data.today() }}</p>
             <h2>Today's plan</h2>
           </div>
-          <button type="button" class="text-button" (click)="goCalendar()">
+          <button
+            type="button"
+            class="text-button"
+            data-guide="calendar-link"
+            (click)="goCalendar()"
+          >
             Calendar ↗
           </button>
         </div>
@@ -50,12 +75,17 @@
           ></progress>
         </div>
         <app-task-list [tasks]="data.todaysTasks()"></app-task-list
-        ><button class="add-task-button" type="button" (click)="openAddQuiz()">
+        ><button
+          class="add-task-button"
+          type="button"
+          data-guide="add-task"
+          (click)="openAddQuiz()"
+        >
           + Add a task
         </button>
       </section>
       <aside>
-        <section class="soft-card next-card">
+        <section class="soft-card next-card" data-guide="up-next">
           <p class="eyebrow">UP NEXT</p>
           @if(showUpcoming()){ @if(data.upcoming();as next){<span class="badge"
             >{{ data.subjectById(next.subjectId)?.name }}</span
@@ -90,7 +120,12 @@
         </section>
         <section class="quick-section">
           <p class="eyebrow">MAKE SPACE FOR PROGRESS</p>
-          <button class="quick-action" type="button" (click)="goStudy()">
+          <button
+            class="quick-action"
+            type="button"
+            data-guide="focus"
+            (click)="goStudy()"
+          >
             <span
               ><strong>Start a focus session</strong
               ><small>One subject. Your full attention.</small></span
@@ -98,6 +133,7 @@
           ><button
             class="quick-action"
             type="button"
+            data-guide="material"
             (click)="openAddMaterial()"
           >
             <span
@@ -115,7 +151,7 @@
           View study space ↗
         </button>
       </div>
-      <div class="subjects-grid">
+      <div class="subjects-grid" data-guide="subjects">
         @for(s of data.subjects();track s.id){<button
           class="subject-tile"
           type="button"

@@ -1,7 +1,6 @@
 import { FormsModule } from "@angular/forms";
 import { Material } from "../../models/models";
-import { AlertController } from "@ionic/angular/standalone";
-import { Component, computed, signal } from "@angular/core";
+import { Component, computed, inject, signal } from "@angular/core";
 import { ActivatedRoute } from "@angular/router";
 import {
   IonHeader,
@@ -22,9 +21,13 @@ import {
   imageOutline,
   trashOutline,
   addOutline,
+  helpCircleOutline,
 } from "ionicons/icons";
 import { MockDataService } from "../../services/mock-data.service";
+import { ConfirmService } from "../../services/confirm.service";
 import { AddMaterialModalComponent } from "../../components/add-material-modal/add-material-modal.component";
+import { readLocal, writeLocal } from "../../services/local-store";
+import { GuideTourService, TourStep } from "../../services/guide-tour.service";
 
 @Component({
   selector: "app-materials",
@@ -49,13 +52,56 @@ export class MaterialsPage {
   activeFilter = signal("");
   query = signal("");
 
+  private tour = inject(GuideTourService);
+  private confirm = inject(ConfirmService);
+  private busy = false;
+
+  readonly guideKey = "lockin.guide.materials";
+  readonly guideSteps: TourStep[] = [
+    {
+      target: '[data-guide="mat-add"]',
+      title: "Add material",
+      text: "Save a new note, image, document or study link.",
+    },
+    {
+      target: '[data-guide="mat-search"]',
+      title: "Search",
+      text: "Type to find a material by its name.",
+    },
+    {
+      target: '[data-guide="mat-filters"]',
+      title: "Filter by subject",
+      text: "Tap a subject to show only its materials, or All to see everything.",
+    },
+    {
+      target: '[data-guide="mat-card"]',
+      title: "Material card",
+      text: "Shows the type, date added, subject and size. Tap “Open reference” to visit a saved link.",
+    },
+    {
+      target: '[data-guide="mat-edit"]',
+      title: "Edit or delete",
+      text: "Edit changes a material's details. Delete removes it after you confirm.",
+    },
+    {
+      target: ".back-button, ion-back-button",
+      title: "Back to Study",
+      text: "Return to your study space.",
+    },
+  ];
+
   constructor(
     public data: MockDataService,
     private route: ActivatedRoute,
     private modalCtrl: ModalController,
-    private alert: AlertController,
   ) {
-    addIcons({ documentTextOutline, imageOutline, trashOutline, addOutline });
+    addIcons({
+      documentTextOutline,
+      imageOutline,
+      trashOutline,
+      addOutline,
+      helpCircleOutline,
+    });
     const qp = this.route.snapshot.queryParamMap.get("subjectId");
     if (qp) this.activeFilter.set(qp);
   }
@@ -80,25 +126,42 @@ export class MaterialsPage {
   }
 
   async remove(id: string) {
-    const alert = await this.alert.create({
-      header: "Delete material?",
+    const ok = await this.confirm.ask({
+      title: "Delete material?",
       message: "This removes the saved reference.",
-      buttons: [
-        { text: "Cancel", role: "cancel" },
-        {
-          text: "Delete",
-          role: "destructive",
-          handler: () => this.data.removeMaterial(id),
-        },
-      ],
+      confirmText: "Delete",
+      cancelText: "Cancel",
+      danger: true,
     });
-    await alert.present();
+    if (ok) this.data.removeMaterial(id);
   }
+
   ionViewWillEnter(): void {
     this.activeFilter.set(
       this.route.snapshot.queryParamMap.get("subjectId") || "",
     );
   }
+
+  // Shows this page's guide once, the first time it is opened.
+  async ionViewDidEnter(): Promise<void> {
+    if (this.busy || readLocal(this.guideKey, false)) return;
+    this.busy = true;
+    await this.openGuide();
+    writeLocal(this.guideKey, true);
+    this.busy = false;
+  }
+
+  // Closes the tour if the user leaves the page mid-tour.
+  ionViewWillLeave(): void {
+    this.tour.stop();
+  }
+
+  // Also called by the "?" button in the header.
+  async openGuide(): Promise<void> {
+    await new Promise((r) => setTimeout(r, 300));
+    await this.tour.start(this.guideSteps);
+  }
+
   async edit(material: Material) {
     const modal = await this.modalCtrl.create({
       component: AddMaterialModalComponent,
@@ -107,6 +170,7 @@ export class MaterialsPage {
     });
     await modal.present();
   }
+
   safeUrl(url?: string): string | null {
     try {
       const parsed = new URL(url || "");

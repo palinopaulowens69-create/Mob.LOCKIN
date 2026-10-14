@@ -1,6 +1,62 @@
 import { readLocal, writeLocal, localDate, timeMinutes } from "./local-store";
 import { Injectable, computed, signal, effect } from "@angular/core";
-import { Material, StudyTask, Subject, UserProfile } from "../models/models";
+import {
+  FocusSession,
+  Material,
+  StudyTask,
+  Subject,
+  UserProfile,
+} from "../models/models";
+
+// Built-in subject catalog. The app has no "add subject" screen, so these stay
+// as fixed defaults; topicCount and progress are computed from real tasks.
+const SUBJECTS: Subject[] = [
+  {
+    id: "calc",
+    name: "Calculus",
+    icon: "calculator-outline",
+    color: "var(--subject-calculus)",
+    topicCount: 0,
+    progress: 0,
+  },
+  {
+    id: "phys",
+    name: "Physics",
+    icon: "planet-outline",
+    color: "var(--subject-physics)",
+    topicCount: 0,
+    progress: 0,
+  },
+  {
+    id: "chem",
+    name: "Chemistry",
+    icon: "flask-outline",
+    color: "var(--subject-chemistry)",
+    topicCount: 0,
+    progress: 0,
+  },
+  {
+    id: "bio",
+    name: "Biology",
+    icon: "leaf-outline",
+    color: "var(--subject-biology)",
+    topicCount: 0,
+    progress: 0,
+  },
+];
+
+const EMPTY_PROFILE: UserProfile = {
+  name: "",
+  email: "",
+  avatarInitials: "?",
+  studyGoal: "",
+  school: "",
+};
+
+function readList<T>(key: string): T[] {
+  const value = readLocal<unknown>(key, []);
+  return Array.isArray(value) ? (value as T[]) : [];
+}
 
 @Injectable({ providedIn: "root" })
 export class MockDataService {
@@ -9,158 +65,80 @@ export class MockDataService {
   ngOnDestroy(): void {
     clearInterval(this.clock);
   }
-  private readonly _subjects = signal<Subject[]>([
-    {
-      id: "calc",
-      name: "Calculus",
-      icon: "calculator-outline",
-      color: "var(--subject-calculus)",
-      topicCount: 0,
-      progress: 0,
-    },
-    {
-      id: "phys",
-      name: "Physics",
-      icon: "planet-outline",
-      color: "var(--subject-physics)",
-      topicCount: 0,
-      progress: 0,
-    },
-    {
-      id: "chem",
-      name: "Chemistry",
-      icon: "flask-outline",
-      color: "var(--subject-chemistry)",
-      topicCount: 0,
-      progress: 0,
-    },
-    {
-      id: "bio",
-      name: "Biology",
-      icon: "leaf-outline",
-      color: "var(--subject-biology)",
-      topicCount: 0,
-      progress: 0,
-    },
-  ]);
 
-  private readonly _tasks = signal<StudyTask[]>([
-    {
-      id: "t1",
-      title: "Review Calculus Notes",
-      subjectId: "calc",
-      type: "session",
-      date: this.today(),
-      startTime: "9:00 AM",
-      endTime: "10:00 AM",
-      done: true,
-    },
-    {
-      id: "t2",
-      title: "Practice Quiz",
-      subjectId: "phys",
-      type: "quiz",
-      date: this.today(),
-      startTime: "11:00 AM",
-      endTime: "12:00 PM",
-      done: true,
-    },
-    {
-      id: "t3",
-      title: "Read Physics Chapter 3",
-      subjectId: "phys",
-      type: "activity",
-      date: this.today(),
-      startTime: "2:00 PM",
-      done: false,
-    },
-    {
-      id: "t4",
-      title: "Study Session",
-      subjectId: "phys",
-      type: "session",
-      date: this.today(),
-      startTime: "2:00 PM",
-      endTime: "3:30 PM",
-      done: false,
-    },
-    {
-      id: "t5",
-      title: "Chemistry Lab Prep",
-      subjectId: "chem",
-      type: "activity",
-      date: this.addDays(1),
-      startTime: "10:00 AM",
-      done: false,
-    },
-    {
-      id: "t6",
-      title: "Biology Flashcards",
-      subjectId: "bio",
-      type: "quiz",
-      date: this.addDays(2),
-      startTime: "4:00 PM",
-      done: false,
-    },
-  ]);
-
-  private readonly _materials = signal<Material[]>([
-    {
-      id: "m1",
-      name: "Calculus Notes.pdf",
-      subjectId: "calc",
-      kind: "pdf",
-      size: "2.4 MB",
-      addedOn: this.today(),
-    },
-    {
-      id: "m2",
-      name: "Physics Formulas.png",
-      subjectId: "phys",
-      kind: "image",
-      size: "1.2 MB",
-      addedOn: this.today(),
-    },
-    {
-      id: "m3",
-      name: "Chapter 3 Summary.docx",
-      subjectId: "chem",
-      kind: "doc",
-      size: "320 KB",
-      addedOn: this.addDays(-1),
-    },
-    {
-      id: "m4",
-      name: "Graph Example.png",
-      subjectId: "calc",
-      kind: "image",
-      size: "1.1 MB",
-      addedOn: this.addDays(-2),
-    },
-    {
-      id: "m5",
-      name: "Formula Sheet.docx",
-      subjectId: "phys",
-      kind: "doc",
-      size: "210 KB",
-      addedOn: this.addDays(-3),
-    },
-  ]);
-
+  // Everything below starts from what is saved on the device (empty on first run).
+  private readonly _subjects = signal<Subject[]>(SUBJECTS);
+  private readonly _tasks = signal<StudyTask[]>(readList<StudyTask>("lockin.tasks"));
+  private readonly _materials = signal<Material[]>(
+    readList<Material>("lockin.materials"),
+  );
   private readonly _profile = signal<UserProfile>({
-    name: "Mark John Esteban",
-    email: "markjohn@example.com",
-    avatarInitials: "ME",
-    studyGoal: "Build a consistent study routine.",
-    school: "",
+    ...EMPTY_PROFILE,
+    ...readLocal<Partial<UserProfile>>("lockin.profile", {}),
   });
 
-  readonly sessions = signal<{ id: string; date: string; seconds: number }[]>(
-    readLocal("lockin.sessions", []),
+  readonly sessions = signal<FocusSession[]>(
+    readList<FocusSession>("lockin.sessions"),
   );
   readonly studyHours = computed(() =>
     (this.sessions().reduce((sum, s) => sum + s.seconds, 0) / 3600).toFixed(1),
   );
+
+  // Study minutes for each of the last 7 days (oldest first, today last).
+  readonly weekMinutes = computed(() => {
+    const out: { date: string; label: string; minutes: number; today: boolean }[] = [];
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(this.now());
+      d.setDate(d.getDate() - i);
+      const date = localDate(d);
+      const seconds = this.sessions()
+        .filter((s) => s.date === date)
+        .reduce((sum, s) => sum + s.seconds, 0);
+      out.push({
+        date,
+        label: d.toLocaleDateString(undefined, { weekday: "short" }),
+        minutes: Math.round(seconds / 60),
+        today: i === 0,
+      });
+    }
+    return out;
+  });
+  // Tallest bar. Never below 30 so one short session doesn't fill the chart.
+  readonly weekMax = computed(() =>
+    Math.max(30, ...this.weekMinutes().map((d) => d.minutes)),
+  );
+  readonly weekTotalMinutes = computed(() =>
+    this.weekMinutes().reduce((sum, d) => sum + d.minutes, 0),
+  );
+
+  // All-time study minutes per subject. Older sessions with no subject are
+  // grouped under "No subject".
+  readonly subjectMinutes = computed(() => {
+    const totals = new Map<string, number>();
+    for (const s of this.sessions()) {
+      const key = s.subjectId ?? "";
+      totals.set(key, (totals.get(key) ?? 0) + s.seconds);
+    }
+    const rows = this._subjects().map((sub) => ({
+      id: sub.id,
+      name: sub.name,
+      color: sub.color,
+      minutes: Math.round((totals.get(sub.id) ?? 0) / 60),
+    }));
+    const other = Math.round((totals.get("") ?? 0) / 60);
+    if (other)
+      rows.push({
+        id: "",
+        name: "No subject",
+        color: "var(--ion-color-medium)",
+        minutes: other,
+      });
+    return rows;
+  });
+  readonly subjectMax = computed(() =>
+    Math.max(1, ...this.subjectMinutes().map((r) => r.minutes)),
+  );
+
   readonly completedQuizzes = computed(
     () => this.tasks().filter((t) => t.type === "quiz" && t.done).length,
   );
@@ -192,15 +170,9 @@ export class MockDataService {
             timeMinutes(a.startTime) - timeMinutes(b.startTime),
         )[0],
   );
+
   constructor() {
-    const tasks = readLocal("lockin.tasks", this._tasks());
-    const materials = readLocal("lockin.materials", this._materials());
-    this._tasks.set(Array.isArray(tasks) ? tasks : []);
-    this._materials.set(Array.isArray(materials) ? materials : []);
-    this._profile.set({
-      ...this._profile(),
-      ...readLocal("lockin.profile", this._profile()),
-    });
+    // Save to the device whenever anything changes.
     effect(() => writeLocal("lockin.tasks", this._tasks()), {
       allowSignalWrites: true,
     });
@@ -239,11 +211,11 @@ export class MockDataService {
       list.map((m) => (m.id === id ? { ...m, ...material, id } : m)),
     );
   }
-  addFocus(seconds: number): void {
+  addFocus(seconds: number, subjectId?: string): void {
     if (seconds > 0)
       this.sessions.update((list) => [
         ...list,
-        { id: crypto.randomUUID(), date: this.today(), seconds },
+        { id: crypto.randomUUID(), date: this.today(), seconds, subjectId },
       ]);
   }
 

@@ -1,0 +1,26 @@
+<div class="guide">
+  <div class="guide__head">
+    <div>
+      <p class="guide__eyebrow">Quick guide</p>
+      <h2>{{ title }}</h2>
+    </div>
+    <button class="guide__close" (click)="close()" aria-label="Close guide">
+      <ion-icon name="close-outline"></ion-icon>
+    </button>
+  </div>
+
+  <ol class="guide__steps">
+    @for (step of steps; track step.title; let i = $index) {
+      <li class="guide__step">
+        <span class="guide__icon"><ion-icon [name]="step.icon"></ion-icon></span>
+        <div>
+          <strong>{{ step.title }}</strong>
+          <p>{{ step.text }}</p>
+        </div>
+      </li>
+    }
+  </ol>
+
+  <button class="guide__done" (click)="close()">Got it</button>
+  <p class="guide__hint">You can reopen this anytime with the ? button.</p>
+</div>

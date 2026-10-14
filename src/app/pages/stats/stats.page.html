@@ -2,6 +2,14 @@
   <div class="page-shell">
     <ion-toolbar>
       <ion-title>Your Progress</ion-title>
+      <ion-button
+        slot="end"
+        fill="clear"
+        (click)="openGuide()"
+        aria-label="How to use this page"
+      >
+        <ion-icon slot="icon-only" name="help-circle-outline"></ion-icon>
+      </ion-button>
     </ion-toolbar>
   </div>
 </ion-header>
@@ -14,25 +22,25 @@
       <p class="muted">{{ progressMessage() }}</p>
     </header>
     <div class="stat-grid">
-      <div class="soft-card stat-tile">
+      <div class="soft-card stat-tile" data-guide="stat-streak">
         <ion-icon name="flame-outline" color="warning"></ion-icon>
         <h2>{{ data.streak() }}</h2>
         <span>Day streak</span>
       </div>
 
-      <div class="soft-card stat-tile">
+      <div class="soft-card stat-tile" data-guide="stat-hours">
         <ion-icon name="time-outline" color="secondary"></ion-icon>
         <h2>{{ data.studyHours() }}h</h2>
         <span>Total study time</span>
       </div>
 
-      <div class="soft-card stat-tile">
+      <div class="soft-card stat-tile" data-guide="stat-quizzes">
         <ion-icon name="ribbon-outline" color="success"></ion-icon>
         <h2>{{ data.completedQuizzes() }}</h2>
         <span>Quizzes completed</span>
       </div>
 
-      <div class="soft-card stat-tile">
+      <div class="soft-card stat-tile" data-guide="stat-rate">
         <ion-icon name="trending-up-outline" color="danger"></ion-icon>
         <h2>{{ data.completionRate() }}%</h2>
         <span>Today’s completion</span>
@@ -43,7 +51,7 @@
       <h3>Today's Completion</h3>
     </div>
 
-    <div class="soft-card completion-card">
+    <div class="soft-card completion-card" data-guide="completion-card">
       <div class="completion-row">
         <div>
           <strong
@@ -62,7 +70,7 @@
       <h3>Subject Progress</h3>
     </div>
 
-    <div class="soft-card subject-progress-card">
+    <div class="soft-card subject-progress-card" data-guide="subject-progress">
       @for (s of data.subjects(); track s.id) {
       <div class="progress-item">
         <div class="progress-item-head">

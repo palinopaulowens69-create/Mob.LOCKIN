@@ -1,6 +1,6 @@
 import { TaskListComponent } from "../../components/task-list/task-list.component";
-import { localDate } from "../../services/local-store";
-import { Component, computed, signal } from "@angular/core";
+import { localDate, readLocal, writeLocal } from "../../services/local-store";
+import { Component, computed, inject, signal } from "@angular/core";
 import {
   IonHeader,
   IonToolbar,
@@ -18,9 +18,11 @@ import {
   chevronForward,
   addOutline,
   calendarClearOutline,
+  helpCircleOutline,
 } from "ionicons/icons";
 import { MockDataService } from "../../services/mock-data.service";
 import { AddQuizModalComponent } from "../../components/add-quiz-modal/add-quiz-modal.component";
+import { GuideTourService, TourStep } from "../../services/guide-tour.service";
 
 @Component({
   selector: "app-calendar",
@@ -43,11 +45,59 @@ export class CalendarPage {
   selectedDate = signal(this.data.today());
   weekOffset = signal(0);
 
+  private tour = inject(GuideTourService);
+  private busy = false;
+
+  readonly guideKey = "lockin.guide.calendar";
+  readonly guideSteps: TourStep[] = [
+    {
+      target: '[data-guide="cal-today"]',
+      title: "Jump to today",
+      text: "Tap to return to the current week and select today's date.",
+    },
+    {
+      target: '[data-guide="cal-nav"]',
+      title: "Change week",
+      text: "Use the arrows to move to the previous or next week.",
+    },
+    {
+      target: '[data-guide="cal-week"]',
+      title: "Pick a day",
+      text: "Tap a day to see its tasks. A dot under the date means that day has tasks planned.",
+    },
+    {
+      target: '[data-guide="cal-agenda-title"]',
+      title: "Selected day",
+      text: "This is the day you are viewing. Its tasks are listed below.",
+    },
+    {
+      target: '[data-guide="cal-add"]',
+      title: "Add a task",
+      text: "Plan a quiz, activity or study session. It starts on the day you selected.",
+    },
+    {
+      target: '[data-guide="cal-agenda"]',
+      title: "Day's tasks",
+      text: "Tasks for the selected day show up here. Tap one to mark it complete.",
+    },
+    {
+      target: "ion-tab-bar",
+      title: "Navigation",
+      text: "Switch between Home, Study, Calendar, Stats and Profile.",
+    },
+  ];
+
   constructor(
     public data: MockDataService,
     private modalCtrl: ModalController,
   ) {
-    addIcons({ chevronBack, chevronForward, addOutline, calendarClearOutline });
+    addIcons({
+      chevronBack,
+      chevronForward,
+      addOutline,
+      calendarClearOutline,
+      helpCircleOutline,
+    });
   }
 
   weekDays = computed(() => {
@@ -83,6 +133,26 @@ export class CalendarPage {
   );
 
   dayTasks = computed(() => this.data.tasksForDate(this.selectedDate()));
+
+  // Shows this page's guide once, the first time the tab is opened.
+  async ionViewDidEnter(): Promise<void> {
+    if (this.busy || readLocal(this.guideKey, false)) return;
+    this.busy = true;
+    await this.openGuide();
+    writeLocal(this.guideKey, true);
+    this.busy = false;
+  }
+
+  // Closes the tour if the user leaves the page mid-tour.
+  ionViewWillLeave(): void {
+    this.tour.stop();
+  }
+
+  // Also called by the "?" button in the header.
+  async openGuide(): Promise<void> {
+    await new Promise((r) => setTimeout(r, 300));
+    await this.tour.start(this.guideSteps);
+  }
 
   today(): void {
     this.weekOffset.set(0);

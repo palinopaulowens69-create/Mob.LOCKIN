@@ -1,5 +1,14 @@
 <ion-header class="ion-no-border"
-  ><ion-toolbar><ion-title>Calendar</ion-title></ion-toolbar></ion-header
+  ><ion-toolbar
+    ><ion-title>Calendar</ion-title>
+    <ion-button
+      slot="end"
+      fill="clear"
+      (click)="openGuide()"
+      aria-label="How to use this page"
+    >
+      <ion-icon slot="icon-only" name="help-circle-outline"></ion-icon>
+    </ion-button> </ion-toolbar></ion-header
 ><ion-content class="ion-padding"
   ><main class="page-shell">
     <div class="section-header">
@@ -7,10 +16,17 @@
         <p class="eyebrow">A LITTLE STRUCTURE</p>
         <h1>Your week, at a glance.</h1>
       </div>
-      <button class="secondary" type="button" (click)="today()">Today</button>
+      <button
+        class="secondary"
+        type="button"
+        data-guide="cal-today"
+        (click)="today()"
+      >
+        Today
+      </button>
     </div>
     <section class="soft-card calendar-card">
-      <div class="cal-header">
+      <div class="cal-header" data-guide="cal-nav">
         <button
           type="button"
           class="icon-button"
@@ -29,7 +45,7 @@
           →
         </button>
       </div>
-      <div class="week-strip">
+      <div class="week-strip" data-guide="cal-week">
         @for(d of weekDays();track d.date){<button
           class="day-cell"
           type="button"
@@ -48,10 +64,15 @@
         >}
       </div>
     </section>
-    <section class="soft-card agenda-card">
+    <section class="soft-card agenda-card" data-guide="cal-agenda">
       <div class="section-header agenda-heading">
-        <h2>{{ selectedDateLabel() }}</h2>
-        <button type="button" class="primary" (click)="openAddQuiz()">
+        <h2 data-guide="cal-agenda-title">{{ selectedDateLabel() }}</h2>
+        <button
+          type="button"
+          class="primary"
+          data-guide="cal-add"
+          (click)="openAddQuiz()"
+        >
           + Add task
         </button>
       </div>

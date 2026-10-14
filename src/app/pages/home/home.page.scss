@@ -264,3 +264,20 @@ h1 {
     height: 82px;
   }
 }
+
+.home-top-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.help-btn {
+  background: transparent;
+  border: 0;
+  padding: 4px;
+  font-size: 26px;
+  line-height: 1;
+  color: var(--ion-color-primary);
+  display: grid;
+  place-items: center;
+}

@@ -1,10 +1,10 @@
-<section class="focus-card">
+<section class="focus-card" data-guide="timer">
   <div>
     <p class="eyebrow">ONE THING AT A TIME</p>
     <h2>A moment to focus.</h2>
     <p class="muted">Put distractions aside. Start where you are.</p>
   </div>
-  <div class="timer-options">
+  <div class="timer-options" data-guide="timer-options">
     @for (minutes of [15, 25, 50]; track minutes) {
       <button
         type="button"
@@ -16,11 +16,42 @@
       </button>
     }
   </div>
-  <p class="clock" role="timer" aria-label="Focus time remaining">
+  <p class="muted subject-label">What are you studying?</p>
+  <div class="timer-options subject-options" data-guide="timer-subject">
+    <button
+      type="button"
+      [class.selected]="focus.subjectId() === ''"
+      [disabled]="focus.locked()"
+      (click)="focus.setSubject('')"
+    >
+      Any
+    </button>
+    @for (s of focus.subjects(); track s.id) {
+      <button
+        type="button"
+        [class.selected]="focus.subjectId() === s.id"
+        [disabled]="focus.locked()"
+        (click)="focus.setSubject(s.id)"
+      >
+        {{ s.name }}
+      </button>
+    }
+  </div>
+  <p
+    class="clock"
+    data-guide="timer-clock"
+    role="timer"
+    aria-label="Focus time remaining"
+  >
     {{ focus.clock() }}
   </p>
   <div class="button-row">
-    <button type="button" class="primary" (click)="focus.toggle()">
+    <button
+      type="button"
+      class="primary"
+      data-guide="timer-start"
+      (click)="focus.toggle()"
+    >
       {{
         focus.running()
           ? "Pause"
@@ -31,6 +62,7 @@
     ><button
       type="button"
       class="secondary"
+      data-guide="timer-finish"
       (click)="focus.finish()"
       [disabled]="!focus.running() && focus.remaining() === focus.duration()"
     >

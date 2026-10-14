@@ -29,6 +29,13 @@ export interface Material {
   url?: string;
 }
 
+export interface FocusSession {
+  id: string;
+  date: string; // ISO date, yyyy-mm-dd
+  seconds: number;
+  subjectId?: string; // missing on sessions saved before subjects were linked
+}
+
 export interface UserProfile {
   name: string;
   email: string;
